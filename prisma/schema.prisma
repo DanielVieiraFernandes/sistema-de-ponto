@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  ADMIN
+}
+
+model User {
+  id       String   @id @default(uuid())
+  name     String
+  email    String   @unique
+  password String
+  role     UserRole
+
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime?    @map("updated_at")
+  punchClocks PunchClock[]
+
+  @@map("users")
+}
+
+enum TypePunchClock {
+  checkIn
+  checkOut
+}
+
+model PunchClock {
+  id String @id @default(uuid())
+
+  userId    String
+  type      TypePunchClock
+  timestamp DateTime
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("punch_clocks")
+}
+
+model Settings {
+  id String @id @default(uuid())
+
+  workdayHours Float @map("workday_hours")
+  overtimeRate Float @map("overtime_rate")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+
+  @@map("settings")
+}
