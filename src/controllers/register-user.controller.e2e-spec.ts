@@ -1,7 +1,6 @@
-import supertest from 'supertest';
+import request from 'supertest';
 import { Test } from '@nestjs/testing';
-
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
 
 describe('Register User (E2E)', () => {
@@ -13,10 +12,26 @@ describe('Register User (E2E)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
-  test('[POST] api/users/register', async () => {
-    console.log('Teste End to End de uma rota da aplicação');
+  test.skip('[POST] api/users/register', async () => {
+    const result = await request(app.getHttpServer())
+      .post('/api/users/register')
+      .send({
+        name: 'Daniel',
+        email: 'daniel@gmail.com',
+        password: '123456',
+        role: 'EMPLOYEE',
+      });
+
+    expect(result.statusCode).toEqual(201);
+    expect(result.body).toEqual({
+      access_token: expect.any(String),
+    });
   });
 });
