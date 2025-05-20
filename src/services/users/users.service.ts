@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { UsersRepository } from 'src/repositories/users-repository';
 import { CreateUserDto } from './dto/create-user-dto';
 import { JwtService } from '@nestjs/jwt';
-import { hash } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
+import { Either, left, right } from 'src/config/errors/either';
+import { UserAlreadyExist } from './errors/user-already-exist';
+import { WrongCredentials } from './errors/wrong-credentials';
+import { AuthenticateUserDto } from './dto/authenticate-user-dto';
 
 @Injectable()
 export class UsersService {
@@ -11,11 +15,18 @@ export class UsersService {
     private jwt: JwtService,
   ) {}
 
-  async registerUser(dto: CreateUserDto) {
+  async registerUser(dto: CreateUserDto): Promise<
+    Either<
+      UserAlreadyExist,
+      {
+        accessToken: string;
+      }
+    >
+  > {
     const isExist = await this.usersRepository.findByEmail(dto.email);
 
     if (isExist) {
-      throw new Error();
+      return left(new UserAlreadyExist());
     }
 
     const passwordHashed = await hash(dto.password, 9);
@@ -27,8 +38,36 @@ export class UsersService {
 
     const accessToken = this.jwt.sign({ sub: user.id, role: user.role });
 
-    return {
+    return right({
       accessToken,
-    };
+    });
+  }
+
+  async authenticateUser({ email, password }: AuthenticateUserDto): Promise<
+    Either<
+      WrongCredentials,
+      {
+        accessToken: string;
+      }
+    >
+  > {
+    const user = await this.usersRepository.findByEmail(email);
+
+    if (!user) {
+      return left(new WrongCredentials());
+    }
+
+    const isPasswordValid = await compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return left(new WrongCredentials());
+    }
+
+    const accessToken = this.jwt.sign({ sub: user.id, role: user.role });
+
+
+    return right({
+      accessToken,
+    });
   }
 }
