@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const payloadSchema = z.object({
   sub: z.string().uuid(),
-  role: z.enum(['EMPLOYEES, ADMIN']),
+  role: z.enum(['EMPLOYEE', 'ADMIN']),
 });
 
 export type UserPayload = z.infer<typeof payloadSchema>;
