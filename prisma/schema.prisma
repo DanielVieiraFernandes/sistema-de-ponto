@@ -42,9 +42,7 @@ model PunchClock {
 
   userId    String
   type      TypePunchClock
-  timestamp DateTime
-
-  createdAt DateTime @default(now()) @map("created_at")
+  timestamp DateTime       @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
@@ -55,7 +53,7 @@ model Settings {
   id String @id @default(uuid())
 
   workdayHours Float @map("workday_hours")
-  overtimeRate Float @map("overtime_rate")
+  x            Float @map("overtime_rate")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @map("updated_at")
