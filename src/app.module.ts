@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { envSchema } from './infra/env/env';
 import { AuthModule } from './infra/auth/auth.module';
-import { ControllersModule } from './controllers/controllers.module';
+import { HttpModule } from './http/http.module';
 
 @Module({
   imports: [
@@ -11,7 +11,7 @@ import { ControllersModule } from './controllers/controllers.module';
       validate: (env) => envSchema.parse(env),
     }),
     AuthModule,
-    ControllersModule,
+    HttpModule,
   ],
 })
 export class AppModule {}
