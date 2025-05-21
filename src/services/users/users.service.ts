@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { UsersRepository } from 'src/repositories/users-repository';
+import { UsersRepository } from '@/repositories/users-repository';
 import { CreateUserDto } from './dto/create-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcryptjs';
-import { Either, left, right } from 'src/config/errors/either';
+import { Either, left, right } from '@/config/errors/either';
 import { UserAlreadyExist } from './errors/user-already-exist';
 import { WrongCredentials } from './errors/wrong-credentials';
 import { AuthenticateUserDto } from './dto/authenticate-user-dto';
@@ -64,7 +64,6 @@ export class UsersService {
     }
 
     const accessToken = this.jwt.sign({ sub: user.id, role: user.role });
-
 
     return right({
       accessToken,

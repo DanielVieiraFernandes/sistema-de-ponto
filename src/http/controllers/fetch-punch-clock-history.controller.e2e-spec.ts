@@ -1,9 +1,9 @@
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from 'src/app.module';
-import { PrismaService } from 'src/infra/database/prisma.service';
-import { DatabaseModule } from 'src/infra/database/database.module';
+import { AppModule } from '@/app.module';
+import { PrismaService } from '@/infra/database/prisma.service';
+import { DatabaseModule } from '@/infra/database/database.module';
 import { hashSync } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 

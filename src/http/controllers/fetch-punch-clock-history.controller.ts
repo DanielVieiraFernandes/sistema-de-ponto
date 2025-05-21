@@ -1,8 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { UserPayload } from 'src/infra/auth/jwt.strategy';
-import { User } from 'src/infra/auth/user.decorator';
-import { FetchPunchClocksDto } from 'src/services/punch-clocks/dto/fetch-punch-clocks-dto';
-import { PunchClocksService } from 'src/services/punch-clocks/punch-clocks.service';
+import { UserPayload } from '@/infra/auth/jwt.strategy';
+import { User } from '@/infra/auth/user.decorator';
+import { FetchPunchClocksDto } from '@/services/punch-clocks/dto/fetch-punch-clocks-dto';
+import { PunchClocksService } from '@/services/punch-clocks/punch-clocks.service';
 import { PunchClockPresenter } from '../presenters/punch-clock-presenter';
 
 @Controller()

@@ -1,12 +1,12 @@
-import { FetchPointsResponse } from 'src/repositories/punch-clocks-repository';
+import { FetchPointsResponse } from '@/repositories/punch-clocks-repository';
 
 export class HistoryPunchClockMapper {
-  private _date: Date;
+  private _date: string;
   private _checkIn: Date;
   private _checkOut: Date;
   private _hoursWorked: number;
 
-  constructor(date: Date, checkIn: Date, checkOut: Date, hoursWorked: number) {
+  constructor(date: string, checkIn: Date, checkOut: Date, hoursWorked: number) {
     this._date = date;
     this._checkIn = checkIn;
     this._checkOut = checkOut;
@@ -15,7 +15,7 @@ export class HistoryPunchClockMapper {
 
   static toHttp(point: FetchPointsResponse, hoursWorked: number) {
     return new HistoryPunchClockMapper(
-      point.day,
+      point.date,
       point.check_in,
       point.check_out,
       hoursWorked,

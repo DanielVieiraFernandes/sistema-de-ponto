@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PunchClocksRepository } from 'src/repositories/punch-clocks-repository';
+import { PunchClocksRepository } from '@/repositories/punch-clocks-repository';
 import { CreatePunchClockDto } from './dto/create-punch-clock-dto';
-import { Either, right } from 'src/config/errors/either';
+import { Either, right } from '@/config/errors/either';
 import { FetchPunchClocksDto } from './dto/fetch-punch-clocks-dto';
-import { HistoryPunchClockMapper } from 'src/infra/database/prisma/mappers/history-punch-clock-mapper';
+import { HistoryPunchClockMapper } from '@/infra/database/prisma/mappers/history-punch-clock-mapper';
 
 @Injectable()
 export class PunchClocksService {

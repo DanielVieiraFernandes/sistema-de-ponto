@@ -5,9 +5,9 @@ import {
   HttpCode,
   Post,
 } from '@nestjs/common';
-import { Public } from 'src/infra/auth/public';
-import { AuthenticateUserDto } from 'src/services/users/dto/authenticate-user-dto';
-import { UsersService } from 'src/services/users/users.service';
+import { Public } from '@/infra/auth/public';
+import { AuthenticateUserDto } from '@/services/users/dto/authenticate-user-dto';
+import { UsersService } from '@/services/users/users.service';
 
 @Controller('/auth')
 export class AuthenticateUserController {
