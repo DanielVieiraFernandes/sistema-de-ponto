@@ -7,6 +7,9 @@ import { Either, left, right } from '@/config/errors/either';
 import { UserAlreadyExist } from './errors/user-already-exist';
 import { WrongCredentials } from './errors/wrong-credentials';
 import { AuthenticateUserDto } from './dto/authenticate-user-dto';
+import { UserRole } from '@prisma/client';
+import { UserPayload } from '@/infra/auth/jwt.strategy';
+import { UserNotExistError } from './errors/user-not-exist-error';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +23,7 @@ export class UsersService {
       UserAlreadyExist,
       {
         accessToken: string;
+        refreshToken: string;
       }
     >
   > {
@@ -37,9 +41,16 @@ export class UsersService {
     });
 
     const accessToken = this.jwt.sign({ sub: user.id, role: user.role });
+    const refreshToken = this.jwt.sign(
+      { sub: user.id, role: user.role },
+      {
+        expiresIn: '7d',
+      },
+    );
 
     return right({
       accessToken,
+      refreshToken,
     });
   }
 
@@ -48,6 +59,7 @@ export class UsersService {
       WrongCredentials,
       {
         accessToken: string;
+        refreshToken: string;
       }
     >
   > {
@@ -64,9 +76,47 @@ export class UsersService {
     }
 
     const accessToken = this.jwt.sign({ sub: user.id, role: user.role });
+    const refreshToken = this.jwt.sign(
+      { sub: user.id, role: user.role },
+      {
+        expiresIn: '7d',
+      },
+    );
 
     return right({
       accessToken,
+      refreshToken,
+    });
+  }
+
+  async generateNewTokens(refreshToken: string): Promise<
+    Either<
+      UserNotExistError,
+      {
+        accessToken: string;
+        refreshToken: string;
+      }
+    >
+  > {
+    const { role, sub }: UserPayload = await this.jwt.verify(refreshToken);
+
+    const user = await this.usersRepository.findById(sub);
+
+    if (!user) {
+      return left(new UserNotExistError());
+    }
+
+    const newAccessToken = this.jwt.sign({ sub: user.id, role: user.role });
+    const newRefreshToken = this.jwt.sign(
+      { sub: user.id, role: user.role },
+      {
+        expiresIn: '7d',
+      },
+    );
+
+    return right({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     });
   }
 }
