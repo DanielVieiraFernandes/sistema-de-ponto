@@ -53,7 +53,7 @@ model Settings {
   id String @id @default(uuid())
 
   workdayHours Float @map("workday_hours")
-  x            Float @map("overtime_rate")
+  overtimeRate Float @map("overtime_rate")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @map("updated_at")

@@ -8,9 +8,14 @@ import { RegisterUserController } from './controllers/register-user.controller';
 import { FetchPunchClockHistoryController } from './controllers/fetch-punch-clock-history.controller';
 import { FetchAllPunchClocksController } from './controllers/fetch-all-punch-clocks.controller';
 import { GenerateReportController } from './controllers/generate-report.controller';
+import { CreateSettingController } from './controllers/create-setting.controller';
+import { SettingsService } from '@/services/settings/settings.service';
+import { UpdateSettingController } from './controllers/update-setting.controller';
+import { EnvService } from '@/infra/env/env.service';
+import { EnvModule } from '@/infra/env/env.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, EnvModule],
   controllers: [
     RegisterUserController,
     AuthenticateUserController,
@@ -18,7 +23,9 @@ import { GenerateReportController } from './controllers/generate-report.controll
     FetchPunchClockHistoryController,
     FetchAllPunchClocksController,
     GenerateReportController,
+    CreateSettingController,
+    UpdateSettingController,
   ],
-  providers: [UsersService, PunchClocksService],
+  providers: [UsersService, PunchClocksService, SettingsService],
 })
 export class HttpModule {}
