@@ -3,11 +3,8 @@ import { HistoryPunchClockMapper } from 'src/infra/database/prisma/mappers/histo
 
 export class PunchClockPresenter {
   static toHttp(point: HistoryPunchClockMapper) {
-
-    console.log('point.date raw:', point.date);
-
     return {
-      'date': dayjs(point.date).format('YYYY-MM-DD'),
+      date: dayjs(point.date).format('YYYY-MM-DD'),
       'check-in': dayjs(point.checkIn).format('HH:mm'),
       'check-out': dayjs(point.checkOut).format('HH:mm'),
       'hours-worked': point.hoursWorked.toFixed(0),

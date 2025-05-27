@@ -4,6 +4,7 @@ import {
   Controller,
   HttpCode,
   Post,
+  Query,
 } from '@nestjs/common';
 import { Public } from '@/infra/auth/public';
 import { AuthenticateUserDto } from '@/services/users/dto/authenticate-user-dto';

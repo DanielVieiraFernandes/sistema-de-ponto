@@ -5,7 +5,9 @@ import { PunchClocksService } from '@/services/punch-clocks/punch-clocks.service
 import { AuthenticateUserController } from './controllers/authenticate-user.controller';
 import { RegisterClockController } from './controllers/register-clock.controller';
 import { RegisterUserController } from './controllers/register-user.controller';
-import { fetchPunchClockHistoryController } from './controllers/fetch-punch-clock-history.controller';
+import { FetchPunchClockHistoryController } from './controllers/fetch-punch-clock-history.controller';
+import { FetchAllPunchClocksController } from './controllers/fetch-all-punch-clocks.controller';
+import { GenerateReportController } from './controllers/generate-report.controller';
 
 @Module({
   imports: [DatabaseModule],
@@ -13,7 +15,9 @@ import { fetchPunchClockHistoryController } from './controllers/fetch-punch-cloc
     RegisterUserController,
     AuthenticateUserController,
     RegisterClockController,
-    fetchPunchClockHistoryController,
+    FetchPunchClockHistoryController,
+    FetchAllPunchClocksController,
+    GenerateReportController,
   ],
   providers: [UsersService, PunchClocksService],
 })
