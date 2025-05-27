@@ -39,11 +39,30 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
     const offset = paginated.take;
 
     const params: any[] = [];
-    let whereClausule = '';
+    const whereConditions: string[] = [];
 
     if (paginated.employeeId) {
-      whereClausule = `WHERE pc.userId = ?`;
+      whereConditions.push(`pc.userId = ?`);
       params.push(paginated.employeeId);
+    }
+
+    if (paginated.startDate) {
+      const startDate = new Date(paginated.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      whereConditions.push(`pc.timestamp >= ?`);
+      params.push(startDate.getTime());
+    }
+
+    if (paginated.endDate) {
+      const endDate = new Date(paginated.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      whereConditions.push(`pc.timestamp <= ?`);
+      params.push(endDate.getTime());
+    }
+
+    let whereClausule = '';
+    if (whereConditions.length > 0) {
+      whereClausule = `WHERE ${whereConditions.join(' AND ')}`;
     }
 
     params.push(limit);
@@ -51,36 +70,35 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
 
     const query = `
       SELECT
-        u.name AS "userName",                         
-        strftime('%Y-%m-%d', pc.timestamp / 1000, 'unixepoch') AS "date", 
-        MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END) AS check_in, 
-        MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) AS check_out 
+        u.name AS "userName",
+        strftime('%Y-%m-%d', pc.timestamp / 1000, 'unixepoch') AS "date",
+        MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END) AS check_in,
+        MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) AS check_out
       FROM
-        punch_clocks AS pc                        
+        punch_clocks AS pc
       INNER JOIN
-        users AS u ON pc.userId = u.id            
-      ${whereClausule}                            
+        users AS u ON pc.userId = u.id
+      ${whereClausule}
       GROUP BY
-        pc.userId, u.name, "date"                
+        pc.userId, u.name, "date"
       HAVING
         COUNT(DISTINCT pc.type) = 2
       ORDER BY
-        "date" DESC, pc.userId DESC               
-      LIMIT ? OFFSET ?;                           
+        "date" DESC, pc.userId DESC
+      LIMIT ? OFFSET ?;
     `;
 
     const punchClocks: FetchPointsResponse[] =
       await this.prisma.$queryRawUnsafe(query, ...params);
-    console.log('Query Result:', punchClocks);
-    console.log('SQL Query:', query);
-    console.log('SQL Params:', params);
 
     return punchClocks.map((punchClock) => {
       const date = punchClock.date;
+
       const check_in = new Date(Number(punchClock.check_in));
       const check_out = new Date(Number(punchClock.check_out));
 
-      const hoursWorked = check_out.getHours() - check_in.getHours();
+      const hoursWorked =
+        (check_out.getTime() - check_in.getTime()) / (1000 * 60 * 60);
 
       const historyPunchClockMapper = HistoryPunchClockMapper.toHttp(
         {
@@ -101,7 +119,6 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
       );
     });
   }
-
   async findAllHistoryByUserId(
     userId: string,
     page: number,
@@ -144,13 +161,31 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
 
     const params: any[] = [];
     let whereClausule = '';
+    const whereConditions: string[] = [];
 
     if (paginated.employeeId) {
       whereClausule = `WHERE pc.userId = ?`;
       params.push(paginated.employeeId);
     }
 
-    // Alterar a query para fazer com o método SUM do banco
+    if (paginated.startDate) {
+      const startDate = new Date(paginated.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      whereConditions.push(`pc.timestamp >= ?`);
+      params.push(startDate.getTime());
+    }
+
+    if (paginated.endDate) {
+      const endDate = new Date(paginated.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      whereConditions.push(`pc.timestamp <= ?`);
+      params.push(endDate.getTime());
+    }
+
+    if (whereConditions.length > 0) {
+      whereClausule = `WHERE ${whereConditions.join(' AND ')}`;
+    }
+
     const query = `
       SELECT
         u.name AS "userName",                         
@@ -178,8 +213,6 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
       const checkOutDate = new Date(Number(value.check_out));
       const hoursWorked = checkOutDate.getHours() - checkInDate.getHours();
       acc += hoursWorked;
-
-      console.log('Acumulator: ', acc);
 
       return acc;
     }, 0);
