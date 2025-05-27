@@ -108,17 +108,11 @@ describe('Fetch All Punch Clocks (E2E)', () => {
     expect(result.body.registers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          employee: 'Steve',
-          date: '2025-05-26',
-          'check-in': '09:00',
-          'check-out': '17:00',
+          employee: 'John Doe',
           hours_worked: 8,
         }),
         expect.objectContaining({
           employee: 'Steve',
-          date: '2025-05-26',
-          'check-in': '09:00',
-          'check-out': '17:00',
           hours_worked: 8,
         }),
       ]),

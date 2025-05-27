@@ -101,7 +101,7 @@ describe('Generate Report in JSON (E2E)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
 
     // console.log(result.error);
-    console.log(result.body);
+    // console.log(result.body);
 
     expect(result.statusCode).toEqual(200);
   });

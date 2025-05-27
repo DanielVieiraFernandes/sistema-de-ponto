@@ -6,6 +6,7 @@ import { PrismaService } from '@/infra/database/prisma.service';
 import { DatabaseModule } from '@/infra/database/database.module';
 import { hashSync } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import dayjs from 'dayjs';
 
 describe('Fetch Punch Clocks (E2E)', () => {
   let app: INestApplication;
@@ -68,9 +69,16 @@ describe('Fetch Punch Clocks (E2E)', () => {
         page: '1',
       });
 
-    console.log(result.error);
-    console.log(result.body.points);
+    // console.log(result.error);
+    // console.log(result.body.points);
 
     expect(result.statusCode).toEqual(200);
+    expect(result.body).toEqual({
+      points: expect.arrayContaining([
+        expect.objectContaining({
+          date: dayjs(checkInDate).format('YYYY-MM-DD'),
+        }),
+      ]),
+    });
   });
 });
