@@ -1,3 +1,4 @@
+import { Roles } from '@/infra/auth/roles';
 import { PunchClocksService } from '@/services/punch-clocks/punch-clocks.service';
 import { Pagination } from '@/utils/pagination/pagination.decorator';
 import { PaginationDto } from '@/utils/pagination/pagination.dto';
@@ -8,6 +9,7 @@ export class GenerateReportController {
   constructor(private punchClockService: PunchClocksService) {}
 
   @Get('/reports')
+  @Roles(['ADMIN'])
   async generateReports(@Pagination() dto: PaginationDto) {
     const result = await this.punchClockService.generateReport(dto);
 
