@@ -14,6 +14,7 @@ import {
 } from '../mappers/register-mapper';
 import { Paginated } from '@/utils/pagination/paginated';
 import { ReportJson } from '../value-objects/report-json';
+
 @Injectable()
 export class PrismaPunchClocksRepository implements PunchClocksRepository {
   constructor(private prisma: PrismaService) {}
