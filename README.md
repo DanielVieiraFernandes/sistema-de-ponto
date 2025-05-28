@@ -34,8 +34,15 @@ O objetivo principal é fornecer uma solução robusta e intuitiva para o contro
 
 * Node.js (versão LTS recomendada, ex: v18.x ou v20.x)
 * Yarn ou NPM (gerenciador de pacotes)
-* Docker e Docker Compose (opcional, mas recomendado para gerenciar o banco de dados)
+* Docker e Docker Compose (opcional pois, estamos utilizando SQLite no projeto, mas recomendado para gerenciar o banco de dados)
 * Um cliente de banco de dados PostgreSQL (como DBeaver, pgAdmin) ou SQLite (como DB Browser for SQLite)
+
+---
+### AVISO !
+
+Caso você deseje trocar o banco de dados para **PostgreSQL**, deverá fazer alterações nas queries raw do projeto e no arquivo `(raíz)/test/setup-e2e.ts` para modificar o banco nos testes E2E.
+
+---
 
 ## Instalação e Configuração
 
@@ -63,7 +70,7 @@ O objetivo principal é fornecer uma solução robusta e intuitiva para o contro
         ```env
        # Port of Application 
        PORT= 
-       DATABASE_URL= database sqlite
+       DATABASE_URL= sqlite path or postgreSQL url 
        # JWT Keys
        JWT_PRIVATE_KEY=rs256 in base 64
        JWT_PUBLIC_KEY=rs256 in base 64
