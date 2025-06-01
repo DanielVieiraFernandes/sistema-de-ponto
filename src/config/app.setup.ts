@@ -30,7 +30,9 @@ export const appSetup = (app: INestApplication, env: EnvService) => {
   );
 
   app.enableCors({
-    origin: '*',
+   origin: true, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
 
   app.use(cookieParser());
