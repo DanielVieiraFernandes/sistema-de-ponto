@@ -4,7 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 
 export const swaggerSetup = (app: INestApplication, env: EnvService) => {
-  const server = `${env.get('API_URL')}:${env.get('PORT')}`;
+  const server = `${env.get('API_URL')}`;
 
   const config = new DocumentBuilder()
     .setTitle('Sistema de Ponto')
