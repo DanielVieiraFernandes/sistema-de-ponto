@@ -29,7 +29,7 @@ export class AuthenticateUserController {
   })
   async authenticateUser(
     @Body() dto: AuthenticateUserDto,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.usersService.authenticateUser(dto);
 
