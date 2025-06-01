@@ -29,6 +29,10 @@ export const appSetup = (app: INestApplication, env: EnvService) => {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
 
+  app.enableCors({
+    origin: '*',
+  });
+
   app.use(cookieParser());
   swaggerSetup(app, env);
 };
