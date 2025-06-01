@@ -30,6 +30,43 @@ O objetivo principal é fornecer uma solução robusta e intuitiva para o contro
 * **Manipulação de Datas/Horas:** Day.js
 * **Utilitários:** BcryptJS (para hashing de senhas)
 
+## 🚀 Documentação da API
+
+A documentação completa e interativa dos endpoints está disponível através do Swagger UI. Para acessá-la, inicie a aplicação e navegue para o seguinte endereço:
+
+➡️ **[Swagger](http://localhost:3000/api)**
+
+Lá você pode visualizar todas as rotas, seus parâmetros, DTOs (schemas) e até mesmo testar os endpoints diretamente pelo navegador.
+
+
+<img src='./assets/readme/swagger-01.png' />
+<img src='./assets/readme/swagger-02.png' />
+
+A seguir, a descrição de todos os endpoints disponíveis na aplicação.
+
+### Autenticação e Usuários
+
+| Método HTTP | Endpoint                  | Descrição                                         | Autenticação |
+| :---------- | :------------------------ | :------------------------------------------------ | :----------- |
+| `POST`      | `/api/users/register`     | Cria um novo usuário no sistema.                  | Não          |
+| `POST`      | `/api/auth/login`         | Autentica um usuário e retorna um token JWT.      | Não          |
+
+### Funcionários
+
+| Método HTTP | Endpoint                  | Descrição                                                      | Autenticação |
+| :---------- | :------------------------ | :------------------------------------------------------------- | :----------- |
+| `POST`      | `/api/punch-clock`        | Registra um horário de entrada ou saída para o usuário logado. | **Sim** |
+| `GET`       | `/api/punch-clock/history`| Retorna o histórico de pontos do usuário logado.               | **Sim** |
+
+### Administradores
+
+| Método HTTP | Endpoint                                                              | Descrição                                                                 | Autenticação   |
+| :---------- | :-------------------------------------------------------------------- | :------------------------------------------------------------------------ | :------------- |
+| `GET`       | `/api/admin/punch-clock`                                              | Retorna todos os registros de ponto do sistema.                           | **Sim (Admin)**|
+| `GET`       | `/api/admin/punch-clock?employeeId={id}&startDate={data}&endDate={data}`| Filtra os registros por funcionário e/ou período.                         | **Sim (Admin)**|
+| `GET`       | `/api/admin/reports?startDate={data}&endDate={data}`                  | Gera um relatório consolidado de horas por um período específico.         | **Sim (Admin)**|
+
+
 ## Pré-requisitos
 
 * Node.js (versão LTS recomendada, ex: v18.x ou v20.x)
