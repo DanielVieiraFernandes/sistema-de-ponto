@@ -20,7 +20,7 @@ export const swaggerSetup = (app: INestApplication, env: EnvService) => {
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('swagger', app, documentFactory);
 };
 
 export const appSetup = (app: INestApplication, env: EnvService) => {
