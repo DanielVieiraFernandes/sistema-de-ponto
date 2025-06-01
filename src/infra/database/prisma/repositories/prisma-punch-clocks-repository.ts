@@ -4,7 +4,8 @@ import {
   FetchPointsResponse,
   PunchClocksRepository,
 } from '@/repositories/punch-clocks-repository';
-import { PrismaService } from '../../prisma.service';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../prisma.service'; // Importe o Prisma para usar o Prisma.sql
 import { HistoryPunchClockMapper } from '../mappers/history-punch-clock-mapper';
 import dayjs from 'dayjs';
 import { PaginationDto } from '@/utils/pagination/pagination.dto';
@@ -24,7 +25,8 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
     type: TypePunchClock,
     timestamp: Date,
   ): Promise<PunchClock> {
-    return await this.prisma.punchClock.create({
+    // O método create não precisa de raw query e já é compatível.
+    return this.prisma.punchClock.create({
       data: {
         userId: id,
         type,
@@ -35,79 +37,75 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
 
   async findAllByUserId(dto: PaginationDto): Promise<RegisterMapperResponse[]> {
     const paginated = new Paginated(dto);
+    const {
+      employeeId,
+      startDate,
+      endDate,
+      skip: offset,
+      take: limit,
+    } = paginated;
 
-    const limit = paginated.skip;
-    const offset = paginated.take;
+    // Usando Prisma.sql para segurança contra SQL Injection
+    let whereConditions = [Prisma.sql`1=1`]; // Condição base
 
-    const params: any[] = [];
-    const whereConditions: string[] = [];
-
-    if (paginated.employeeId) {
-      whereConditions.push(`pc.userId = ?`);
-      params.push(paginated.employeeId);
+    if (employeeId) {
+      whereConditions.push(Prisma.sql`pc."userId" = ${employeeId}`);
+    }
+    if (startDate) {
+      whereConditions.push(Prisma.sql`pc.timestamp >= ${startDate}`);
+    }
+    if (endDate) {
+      whereConditions.push(Prisma.sql`pc.timestamp <= ${endDate}`);
     }
 
-    if (paginated.startDate) {
-      const startDate = new Date(paginated.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      whereConditions.push(`pc.timestamp >= ?`);
-      params.push(startDate.getTime());
-    }
+    const whereClause = Prisma.sql`WHERE ${Prisma.join(whereConditions, ' AND ')}`;
 
-    if (paginated.endDate) {
-      const endDate = new Date(paginated.endDate);
-      endDate.setHours(23, 59, 59, 999);
-      whereConditions.push(`pc.timestamp <= ?`);
-      params.push(endDate.getTime());
-    }
-
-    let whereClausule = '';
-    if (whereConditions.length > 0) {
-      whereClausule = `WHERE ${whereConditions.join(' AND ')}`;
-    }
-
-    params.push(limit);
-    params.push(offset);
-
-    const query = `
+    // A query agora calcula as horas trabalhadas diretamente no banco de dados.
+    const query = Prisma.sql`
+      WITH daily_punch_clocks AS (
+        SELECT
+          u.name AS "userName",
+          pc."userId",
+          pc.timestamp::date AS "date",
+          MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END) AS check_in,
+          MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) AS check_out
+        FROM
+          punch_clocks AS pc
+        INNER JOIN
+          users AS u ON pc."userId" = u.id
+        ${whereClause}
+        GROUP BY
+          u.name, pc."userId", pc.timestamp::date
+        HAVING
+          COUNT(DISTINCT pc.type) >= 2
+      )
       SELECT
-        u.name AS "userName",
-        strftime('%Y-%m-%d', pc.timestamp / 1000, 'unixepoch') AS "date",
-        MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END) AS check_in,
-        MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) AS check_out
+        "userName",
+        to_char("date", 'YYYY-MM-DD') AS "date",
+        check_in,
+        check_out,
+        -- Calcula a diferença em segundos e converte para horas decimais
+        EXTRACT(EPOCH FROM (check_out - check_in)) / 3600 AS "hoursWorked"
       FROM
-        punch_clocks AS pc
-      INNER JOIN
-        users AS u ON pc.userId = u.id
-      ${whereClausule}
-      GROUP BY
-        pc.userId, u.name, "date"
-      HAVING
-        COUNT(DISTINCT pc.type) = 2
+        daily_punch_clocks
       ORDER BY
-        "date" DESC, pc.userId DESC
-      LIMIT ? OFFSET ?;
+        "date" DESC, "userId" DESC
+      LIMIT ${limit} OFFSET ${offset};
     `;
 
-    const punchClocks: FetchPointsResponse[] =
-      await this.prisma.$queryRawUnsafe(query, ...params);
+    // Usando $queryRaw em vez de $queryRawUnsafe
+    const punchClocks: (FetchPointsResponse & { hoursWorked: number })[] =
+      await this.prisma.$queryRaw(query);
 
     return punchClocks.map((punchClock) => {
-      const date = punchClock.date;
-
-      const check_in = new Date(Number(punchClock.check_in));
-      const check_out = new Date(Number(punchClock.check_out));
-
-      const hoursWorked =
-        (check_out.getTime() - check_in.getTime()) / (1000 * 60 * 60);
-
+      // O mapeamento agora é muito mais simples
       const historyPunchClockMapper = HistoryPunchClockMapper.toHttp(
         {
-          date,
-          check_in,
-          check_out,
+          date: punchClock.date,
+          check_in: punchClock.check_in,
+          check_out: punchClock.check_out,
         },
-        hoursWorked,
+        punchClock.hoursWorked, // hoursWorked já vem calculado
       );
 
       if (!punchClock.userName) {
@@ -120,121 +118,99 @@ export class PrismaPunchClocksRepository implements PunchClocksRepository {
       );
     });
   }
+
   async findAllHistoryByUserId(
     userId: string,
     page: number,
   ): Promise<HistoryPunchClockMapper[]> {
-    const punchClocks: FetchPointsResponse[] =
-      await this.prisma.$queryRawUnsafe(
-        `
-    SELECT
-      MAX(CASE WHEN type = 'checkIn' THEN timestamp END) AS check_in,
-      MAX(CASE WHEN type = 'checkOut' THEN timestamp END) AS check_out
-    FROM punch_clocks
-    WHERE userId = ?
-    GROUP BY strftime('%Y-%m-%d', timestamp)
-    HAVING COUNT(DISTINCT type) = 2
-    ORDER BY timestamp DESC
-    LIMIT ? OFFSET ?;
-    `,
-        userId,
-        20,
-        (page - 1) * 20,
-      );
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const punchClocks: (FetchPointsResponse & { hoursWorked: number })[] =
+      await this.prisma.$queryRaw(Prisma.sql`
+        WITH daily_punches AS (
+          SELECT
+            "timestamp"::date as "date",
+            MAX(CASE WHEN type = 'checkIn' THEN "timestamp" END) AS check_in,
+            MAX(CASE WHEN type = 'checkOut' THEN "timestamp" END) AS check_out
+          FROM punch_clocks
+          WHERE "userId" = ${userId}
+          GROUP BY "timestamp"::date
+          HAVING COUNT(DISTINCT type) >= 2
+        )
+        SELECT
+          to_char("date", 'YYYY-MM-DD') as "date",
+          check_in,
+          check_out,
+          EXTRACT(EPOCH FROM (check_out - check_in)) / 3600 AS "hoursWorked"
+        FROM daily_punches
+        ORDER BY "date" DESC
+        LIMIT ${limit} OFFSET ${offset};
+      `);
 
     return punchClocks.map((point) => {
-      const checkInDate = new Date(Number(point.check_in));
-      const checkOutDate = new Date(Number(point.check_out));
-
-      const date = dayjs(checkInDate).format('YYYY-MM-DD');
-
-      const hoursWorked = checkOutDate.getHours() - checkInDate.getHours();
-
       return HistoryPunchClockMapper.toHttp(
-        { date, check_in: checkInDate, check_out: checkOutDate },
-        hoursWorked,
+        {
+          date: point.date,
+          check_in: point.check_in,
+          check_out: point.check_out,
+        },
+        point.hoursWorked,
       );
     });
   }
 
   async findAllAndReturnReport(dto: PaginationDto): Promise<ReportJson> {
     const paginated = new Paginated(dto);
+    const { employeeId, startDate, endDate } = paginated;
 
-    const params: any[] = [];
-    let whereClausule = '';
-    const whereConditions: string[] = [];
-
-    if (paginated.employeeId) {
-      whereClausule = `WHERE pc.userId = ?`;
-      params.push(paginated.employeeId);
+    let whereConditions = [Prisma.sql`1=1`];
+    if (employeeId) {
+      whereConditions.push(Prisma.sql`pc."userId" = ${employeeId}`);
     }
-
-    if (paginated.startDate) {
-      const startDate = new Date(paginated.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      whereConditions.push(`pc.timestamp >= ?`);
-      params.push(startDate.getTime());
+    if (startDate) {
+      whereConditions.push(Prisma.sql`pc.timestamp >= ${startDate}`);
     }
-
-    if (paginated.endDate) {
-      const endDate = new Date(paginated.endDate);
-      endDate.setHours(23, 59, 59, 999);
-      whereConditions.push(`pc.timestamp <= ?`);
-      params.push(endDate.getTime());
+    if (endDate) {
+      whereConditions.push(Prisma.sql`pc.timestamp <= ${endDate}`);
     }
+    const whereClause = Prisma.sql`WHERE ${Prisma.join(whereConditions, ' AND ')}`;
 
-    if (whereConditions.length > 0) {
-      whereClausule = `WHERE ${whereConditions.join(' AND ')}`;
-    }
-
-    const query = `
-      SELECT
-        u.name AS "userName",                         
-        strftime('%Y-%m-%d', pc.timestamp / 1000, 'unixepoch') AS "date", 
-        MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END) AS check_in, 
-        MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) AS check_out 
-      FROM
-        punch_clocks AS pc                        
-      INNER JOIN
-        users AS u ON pc.userId = u.id            
-      ${whereClausule}                            
-      GROUP BY
-        pc.userId, u.name, "date"                
-      HAVING
-        COUNT(DISTINCT pc.type) = 2
-      ORDER BY
-        "date" DESC, pc.userId DESC                                          
+    const result: {
+      totalHours: number;
+      reportData: { name: string; hours_worked: number }[] | null;
+    }[] = await this.prisma.$queryRaw`
+        WITH daily_hours AS (
+          SELECT
+            u.name,
+            EXTRACT(EPOCH FROM (
+              MAX(CASE WHEN pc.type = 'checkOut' THEN pc.timestamp END) -
+              MAX(CASE WHEN pc.type = 'checkIn' THEN pc.timestamp END)
+            )) / 3600 AS hours_worked
+          FROM punch_clocks pc
+          JOIN users u ON u.id = pc."userId"
+          ${whereClause}
+          GROUP BY u.name, pc.timestamp::date
+          HAVING COUNT(DISTINCT pc.type) >= 2
+        ),
+        aggregated_report AS (
+          SELECT
+            name,
+            SUM(hours_worked) as hours_worked
+          FROM daily_hours
+          GROUP BY name
+        )
+        SELECT
+          (SELECT SUM(hours_worked) FROM aggregated_report) as "totalHours",
+          json_agg(json_build_object('name', name, 'hours_worked', hours_worked)) as "reportData"
+        FROM aggregated_report
     `;
 
-    const punchClocks: FetchPointsResponse[] =
-      await this.prisma.$queryRawUnsafe(query, ...params);
+    const reportData = result[0];
 
-    const totalHours = punchClocks.reduce((acc, value) => {
-      const checkInDate = new Date(Number(value.check_in));
-      const checkOutDate = new Date(Number(value.check_out));
-      const hoursWorked = checkOutDate.getHours() - checkInDate.getHours();
-      acc += hoursWorked;
-
-      return acc;
-    }, 0);
-
-    const report = ReportJson.create(
-      totalHours,
-      punchClocks.map((employe) => {
-        if (!employe.userName) throw new BadRequestException('unamed user');
-        const checkInDate = new Date(Number(employe.check_in));
-        const checkOutDate = new Date(Number(employe.check_out));
-
-        const name = employe.userName;
-        const hoursWorked = checkOutDate.getHours() - checkInDate.getHours();
-
-        return {
-          name,
-          hours_worked: hoursWorked,
-        };
-      }),
+    return ReportJson.create(
+      reportData.totalHours || 0,
+      reportData.reportData || [],
     );
-
-    return report;
   }
 }
