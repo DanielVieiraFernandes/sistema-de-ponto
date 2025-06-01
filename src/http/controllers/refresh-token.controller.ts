@@ -1,5 +1,7 @@
+import { Public } from '@/infra/auth/public';
 import { UsersService } from '@/services/users/users.service';
 import { BadRequestException, Controller, Post, Req } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 
 @Controller('auth')
@@ -7,6 +9,7 @@ export class RefreshTokenController {
   constructor(private usersService: UsersService) {}
 
   @Post('/refresh-token')
+  @Public()
   async refreshToken(@Req() req: Request) {
     const refreshToken = req.cookies['refreshToken'];
 

@@ -6,12 +6,19 @@ import { PunchClocksService } from '@/services/punch-clocks/punch-clocks.service
 import { PunchClockPresenter } from '../presenters/punch-clock-presenter';
 import { Pagination } from '@/utils/pagination/pagination.decorator';
 import { PaginationDto } from '@/utils/pagination/pagination.dto';
+import { ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Roles } from '@/infra/auth/roles';
+import { FetchPunchClocksHistoryResponseDto } from './response-dto/fetch-punch-clocks-history-response-dto copy';
 
 @Controller()
 export class FetchPunchClockHistoryController {
   constructor(private punchClocksService: PunchClocksService) {}
 
   @Get('/punch-clock/history')
+  @Roles(['ADMIN'])
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, type: FetchPunchClocksHistoryResponseDto })
+  @ApiQuery({type: PaginationDto})
   async fetchPunchClockHistory(
     @User() user: UserPayload,
     @Pagination() { page }: PaginationDto,

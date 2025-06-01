@@ -5,11 +5,11 @@ import { appSetup } from './config/app.setup';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  appSetup(app);
 
   const env = app.get(EnvService);
   const port = env.get('PORT');
+
+  appSetup(app, env);
 
   await app.listen(port);
 }

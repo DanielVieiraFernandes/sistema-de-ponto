@@ -31,9 +31,8 @@ describe('Register User (E2E)', () => {
 
     expect(result.statusCode).toEqual(201);
     expect(result.body).toEqual({
-      tokens: {
-        access_token: expect.any(String),
-      },
+      access_token: expect.any(String),
+      refresh_token: expect.any(String),
     });
   });
 });
